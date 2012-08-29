@@ -25,18 +25,19 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 import re
 
+
 class Hosts(object):
-    
+
     def __init__(self, path):
         self.hosts = {}
         self.read(path)
-        
+
     def get_one(self, host_name):
         return self.hosts[host_name]
-    
+
     def print_one(self, host_name):
         print host_name, self.get_one(host_name)
-        
+
     def print_all(self, host_names=None):
         if host_names is None:
             for host_name in self.hosts.keys():
@@ -44,7 +45,7 @@ class Hosts(object):
         else:
             for host_name in host_names:
                 self.print_one(host_name)
-            
+
     def read(self, path):
         with open(path, 'r') as hosts_file:
             for line in hosts_file.read().split('\n'):
@@ -65,37 +66,39 @@ class Hosts(object):
         with open(path, 'w') as hosts_file:
             for ip_address in reversed_hosts.keys():
                 hosts_file.write('%s\t%s\n' % (ip_address, '\t'.join(reversed_hosts[ip_address]),))
-                
+
     def set_one(self, host_name, ip_address):
         self.hosts[host_name] = ip_address
-        
+
     def set_all(self, host_names, ip_address):
         for host_name in host_names:
             self.set_one(host_name, ip_address)
-            
+
     def alias_all(self, host_names, target):
         self.set_all(host_names, self.get_one(target))
 
 if __name__ == '__main__':
     import os
     import argparse
-    
+
     parser = argparse.ArgumentParser(description='Manipulate your hosts file')
-    
+
     parser.add_argument('name', nargs='+')
     parser.add_argument('--set', dest='ip_address')
     parser.add_argument('--alias')
     parser.add_argument('--get', action='store_true', default=False)
-    
-    args = parser.parse_args() 
-    
+
+    args = parser.parse_args()
+
     if os.name == 'nt':
         hosts_path = os.path.join(os.environ['SYSTEMROOT'], 'system32/drivers/etc/hosts')
+    if os.name == 'posix':
+        hosts_path = '/etc/hosts'
     else:
         raise Exception('Unsupported OS: %s' % os.name)
-    
+
     hosts = Hosts(hosts_path)
-    
+
     if args.get:
         hosts.print_all(args.name)
     elif args.alias is not None:
