@@ -46,7 +46,21 @@ class Hosts(object):
             for host_name in host_names:
                 self.print_one(host_name)
 
+    def file_contents(self):
+        reversed_hosts = {}
+        for host_name in self.hosts.keys():
+            ip_address = self.hosts[host_name]
+            if ip_address not in reversed_hosts:
+                reversed_hosts[ip_address] = [host_name]
+            else:
+                reversed_hosts[ip_address].append(host_name)
+        parts = []
+        for ip_address in reversed_hosts.keys():
+                parts.append('%s\t%s' % (ip_address, '\t'.join(reversed_hosts[ip_address]),))
+        return '\n'.join(parts) + '\n'
+
     def read(self, path):
+        """Read the hosts file at the given location and parse the contents"""
         with open(path, 'r') as hosts_file:
             for line in hosts_file.read().split('\n'):
                 if len(re.sub('\s*', '', line)) and not line.startswith('#'):
@@ -56,25 +70,21 @@ class Hosts(object):
                         self.hosts[host_name] = ip_address
 
     def write(self, path):
-        reversed_hosts = {}
-        for host_name in self.hosts.keys():
-            ip_address = self.hosts[host_name]
-            if ip_address not in reversed_hosts:
-                reversed_hosts[ip_address] = [host_name]
-            else:
-                reversed_hosts[ip_address].append(host_name)
+        """Write the contents of this hosts definition to the provided path"""
         with open(path, 'w') as hosts_file:
-            for ip_address in reversed_hosts.keys():
-                hosts_file.write('%s\t%s\n' % (ip_address, '\t'.join(reversed_hosts[ip_address]),))
+            hosts_file.write(self.file_contents())
 
     def set_one(self, host_name, ip_address):
+        """Set the given hostname to map to the given IP address"""
         self.hosts[host_name] = ip_address
 
     def set_all(self, host_names, ip_address):
+        """Set the given list of hostnames to map to the given IP address"""
         for host_name in host_names:
             self.set_one(host_name, ip_address)
 
     def alias_all(self, host_names, target):
+        """Set the given hostname to map to the IP address that target maps to"""
         self.set_all(host_names, self.get_one(target))
 
 if __name__ == '__main__':
@@ -87,12 +97,13 @@ if __name__ == '__main__':
     parser.add_argument('--set', dest='ip_address')
     parser.add_argument('--alias')
     parser.add_argument('--get', action='store_true', default=False)
+    parser.add_argument('--dry', action='store_true', default=False)
 
     args = parser.parse_args()
 
     if os.name == 'nt':
         hosts_path = os.path.join(os.environ['SYSTEMROOT'], 'system32/drivers/etc/hosts')
-    if os.name == 'posix':
+    elif os.name == 'posix':
         hosts_path = '/etc/hosts'
     else:
         raise Exception('Unsupported OS: %s' % os.name)
@@ -103,7 +114,13 @@ if __name__ == '__main__':
         hosts.print_all(args.name)
     elif args.alias is not None:
         hosts.alias_all(args.name, args.alias)
-        hosts.write(hosts_path)
+        if args.dry:
+            print hosts.file_contents()
+        else:
+            hosts.write(hosts_path)
     elif hasattr(args, 'ip_address'):
         hosts.set_all(args.name, args.ip_address)
-        hosts.write(hosts_path)
+        if args.dry:
+            print hosts.file_contents()
+        else:
+            hosts.write(hosts_path)
