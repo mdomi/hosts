@@ -27,9 +27,8 @@ import re
 
 
 def compare_ip(ip1, ip2):
-    ip1parts = map(int, ip1.split('.'))
-    ip2parts = map(int, ip2.split('.'))
-    for part1, part2 in zip(ip1parts, ip2parts):
+    """Comparator function for comparing two IPv4 address strings"""
+    for part1, part2 in zip(map(int, ip1.split('.')), map(int, ip2.split('.'))):
         if (part1 - part2) != 0:
             return part1 - part2
     return 0
