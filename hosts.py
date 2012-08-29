@@ -26,6 +26,15 @@ OTHER DEALINGS IN THE SOFTWARE.
 import re
 
 
+def compare_ip(ip1, ip2):
+    ip1parts = map(int, ip1.split('.'))
+    ip2parts = map(int, ip2.split('.'))
+    for part1, part2 in zip(ip1parts, ip2parts):
+        if (part1 - part2) != 0:
+            return part1 - part2
+    return 0
+
+
 class Hosts(object):
 
     def __init__(self, path):
@@ -55,7 +64,7 @@ class Hosts(object):
             else:
                 reversed_hosts[ip_address].append(host_name)
         parts = []
-        for ip_address in reversed_hosts.keys():
+        for ip_address in sorted(reversed_hosts.keys(), compare_ip):
                 parts.append('%s\t%s' % (ip_address, '\t'.join(reversed_hosts[ip_address]),))
         return '\n'.join(parts) + '\n'
 
