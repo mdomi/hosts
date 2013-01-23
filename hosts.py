@@ -33,10 +33,7 @@ def ip_to_ints(ip):
 
 def compare_ip(ip1, ip2):
     """Comparator function for comparing two IPv4 address strings"""
-    for part1, part2 in zip(ip_to_ints(ip1), ip_to_ints(ip2)):
-        if (part1 - part2) != 0:
-            return part1 - part2
-    return 0
+    return cmp(ip_to_ints(ip1), ip_to_ints(ip2))
 
 
 def get_created_comment():
