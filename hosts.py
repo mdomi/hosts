@@ -22,14 +22,18 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 '''
-
 import datetime
 import re
+import socket
+
+
+def ip_to_ints(ip):
+    return map(int, ip.split('.'))
 
 
 def compare_ip(ip1, ip2):
     """Comparator function for comparing two IPv4 address strings"""
-    for part1, part2 in zip(map(int, ip1.split('.')), map(int, ip2.split('.'))):
+    for part1, part2 in zip(ip_to_ints(ip1), ip_to_ints(ip2)):
         if (part1 - part2) != 0:
             return part1 - part2
     return 0
@@ -49,8 +53,15 @@ class Hosts(object):
         self.hosts = {}
         self.read(path)
 
-    def get_one(self, host_name):
-        return self.hosts[host_name]
+    def get_one(self, host_name, raise_on_not_found=False):
+        if host_name in self.hosts:
+            return self.hosts[host_name]
+        try:
+            socket.gethostbyname(host_name)
+        except socket.gaierror:
+            if raise_on_not_found:
+                raise Exception('Unknown host: %s' % (host_name,))
+        return '[Unknown]'
 
     def print_one(self, host_name):
         print host_name, self.get_one(host_name)
@@ -73,8 +84,8 @@ class Hosts(object):
                 reversed_hosts[ip_address].append(host_name)
         parts = []
         for ip_address in sorted(reversed_hosts.keys(), compare_ip):
-                parts.append('%s\t%s' % (ip_address, '\t'.join(reversed_hosts[ip_address]),))
-        return get_created_comment() + '\n' + '\n'.join(parts) + '\n'
+                parts.append('%s\t%s' % (ip_address, '\t'.join(sorted(reversed_hosts[ip_address])),))
+        return '\n'.join([get_created_comment(), '\n'.join(parts), ''])
 
     def read(self, path):
         """Read the hosts file at the given location and parse the contents"""
@@ -86,10 +97,23 @@ class Hosts(object):
                     for host_name in parts[1:]:
                         self.hosts[host_name] = ip_address
 
+    def remove_one(self, host_name):
+        """Remove a mapping for the given host_name"""
+        del self.hosts[host_name]
+
+    def remove_all(self, host_names):
+        """Remove a mapping for the given host_name"""
+        for host_name in host_names:
+            self.remove_one(host_name)
+
     def write(self, path):
         """Write the contents of this hosts definition to the provided path"""
+        try:
+            contents = self.file_contents()
+        except Exception as e:
+            raise e
         with open(path, 'w') as hosts_file:
-            hosts_file.write(self.file_contents())
+            hosts_file.write(contents)
 
     def set_one(self, host_name, ip_address):
         """Set the given hostname to map to the given IP address"""
@@ -102,7 +126,7 @@ class Hosts(object):
 
     def alias_all(self, host_names, target):
         """Set the given hostname to map to the IP address that target maps to"""
-        self.set_all(host_names, self.get_one(target))
+        self.set_all(host_names, self.get_one(target, raise_on_not_found=True))
 
 if __name__ == '__main__':
     import os
@@ -114,6 +138,7 @@ if __name__ == '__main__':
     parser.add_argument('--set', dest='ip_address')
     parser.add_argument('--alias')
     parser.add_argument('--get', action='store_true', default=False)
+    parser.add_argument('--remove', action='store_true', default=False)
     parser.add_argument('--dry', action='store_true', default=False)
 
     args = parser.parse_args()
@@ -127,17 +152,27 @@ if __name__ == '__main__':
 
     hosts = Hosts(hosts_path)
 
-    if args.get:
-        hosts.print_all(args.name)
-    elif args.alias is not None:
-        hosts.alias_all(args.name, args.alias)
-        if args.dry:
-            print hosts.file_contents()
-        else:
-            hosts.write(hosts_path)
-    elif hasattr(args, 'ip_address'):
-        hosts.set_all(args.name, args.ip_address)
-        if args.dry:
-            print hosts.file_contents()
-        else:
-            hosts.write(hosts_path)
+    try:
+        if args.get:
+            hosts.print_all(args.name)
+        elif args.alias is not None:
+            hosts.alias_all(args.name, args.alias)
+            if args.dry:
+                print hosts.file_contents()
+            else:
+                hosts.write(hosts_path)
+        elif hasattr(args, 'ip_address'):
+            hosts.set_all(args.name, args.ip_address)
+            if args.dry:
+                print hosts.file_contents()
+            else:
+                hosts.write(hosts_path)
+        elif args.remove:
+            hosts.remove_all(args.name)
+            if args.dry:
+                print hosts.file_contents()
+            else:
+                hosts.write(hosts_path)
+    except Exception as e:
+        print 'Error: %s' % (e,)
+        exit(1)
