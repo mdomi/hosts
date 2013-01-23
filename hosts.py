@@ -84,7 +84,10 @@ class Hosts(object):
                 reversed_hosts[ip_address].append(host_name)
         parts = []
         for ip_address in sorted(reversed_hosts.keys(), compare_ip):
-                parts.append('%s\t%s' % (ip_address, '\t'.join(sorted(reversed_hosts[ip_address])),))
+            parts.append('\n# -- %s -- #' % (ip_address,))
+            for host_name in sorted(reversed_hosts[ip_address]):
+                parts.append('%s\t%s' % (ip_address, host_name))
+            parts.append('# -- %s -- #' % (ip_address,))
         return '\n'.join([get_created_comment(), '\n'.join(parts), ''])
 
     def read(self, path):
