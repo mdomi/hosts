@@ -193,7 +193,7 @@ if __name__ == '__main__':
                 print hosts.file_contents()
             else:
                 hosts.write(hosts_path)
-        elif hasattr(args, 'ip_address'):
+        elif args.ip_address is not None:
             hosts.set_all(args.name, args.ip_address)
             if args.dry:
                 print hosts.file_contents()
