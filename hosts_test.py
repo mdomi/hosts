@@ -2,8 +2,9 @@ import unittest
 import os
 import tempfile
 import re
+import socket
 
-from hosts import Hosts
+from hosts import Hosts, compare_ip
 
 
 SPLIT_RE = re.compile("[\t ]+")
@@ -16,8 +17,6 @@ def has_host_line(hosts_file, host_line):
             if needle == SPLIT_RE.split(line.strip()):
                 return True
     return False
-
-
 
 
 class HostManipulationTestCase(unittest.TestCase):
@@ -60,6 +59,32 @@ class HostManipulationTestCase(unittest.TestCase):
 
         self.assertDoesNotHaveHostLine("1.2.3.4 test")
 
+
+class IPComparisonTestCase(unittest.TestCase):
+    def test_compare_ipv4(self):
+        self.assertEqual(0, compare_ip("1.1.1.1", "01.001.1.1"))
+        self.assertNotEqual(0, compare_ip("1.1.1.1", "1.2.3.4"))
+
+    def test_compare_ipv6(self):
+        self.assertEqual(0, compare_ip("::1", "0::1"))
+        self.assertNotEqual(0, compare_ip("::1", "::f"))
+
+
+class FallbackIPComparisonTestCase(unittest.TestCase):
+    def setUp(self):
+        self.inet_pton = socket.inet_pton
+        del socket.inet_pton
+
+    def tearDown(self):
+        socket.inet_pton = self.inet_pton
+
+    def test_parse_ipv4(self):
+        self.assertEqual(0, compare_ip("1.1.1.1", "01.001.1.1"))
+
+    def test_parse_ipv6(self):
+        # Not supported as of now. We're just verifying that
+        # we use the fallback
+        self.assertRaises(ValueError, compare_ip, "::1", "::1")
 
 
 if __name__ == "__main__":

@@ -25,15 +25,42 @@ OTHER DEALINGS IN THE SOFTWARE.
 import datetime
 import re
 import socket
+import struct
 
 
-def ip_to_ints(ip):
+def normalize_ipv4(ip):
+    try:
+        _str = socket.inet_pton(socket.AF_INET, ip)
+    except socket.error:
+        raise ValueError
+    return struct.unpack('!I', _str)[0]
+
+
+def normalize_ipv6(ip):
+    try:
+        _str = socket.inet_pton(socket.AF_INET6, ip)
+    except socket.error:
+        raise ValueError
+    a, b = struct.unpack('!2Q', _str)
+    return (a << 64) | b
+
+
+def normalize_ip(ip):
+    try:
+        for fn in [normalize_ipv4, normalize_ipv6]:
+            try:
+                return fn(ip)
+            except ValueError:
+                continue
+    except AttributeError:
+        # Fall back, will fail on IPv6
+        pass
     return map(int, ip.split('.'))
 
 
 def compare_ip(ip1, ip2):
     """Comparator function for comparing two IPv4 address strings"""
-    return cmp(ip_to_ints(ip1), ip_to_ints(ip2))
+    return cmp(normalize_ip(ip1), normalize_ip(ip2))
 
 
 def get_created_comment():
