@@ -124,14 +124,18 @@ class Hosts(object):
                     for host_name in parts[1:]:
                         self.hosts[host_name] = ip_address
 
-    def remove_one(self, host_name):
+    def remove_one(self, host_name, raise_on_not_found=True):
         """Remove a mapping for the given host_name"""
-        del self.hosts[host_name]
+        try:
+            del self.hosts[host_name]
+        except KeyError:
+            if raise_on_not_found:
+                raise
 
-    def remove_all(self, host_names):
+    def remove_all(self, host_names, raise_on_not_found=True):
         """Remove a mapping for the given host_name"""
         for host_name in host_names:
-            self.remove_one(host_name)
+            self.remove_one(host_name, raise_on_not_found)
 
     def write(self, path):
         """Write the contents of this hosts definition to the provided path"""
@@ -151,9 +155,9 @@ class Hosts(object):
         for host_name in host_names:
             self.set_one(host_name, ip_address)
 
-    def alias_all(self, host_names, target):
+    def alias_all(self, host_names, target, raise_on_not_found=True):
         """Set the given hostname to map to the IP address that target maps to"""
-        self.set_all(host_names, self.get_one(target, raise_on_not_found=True))
+        self.set_all(host_names, self.get_one(target, raise_on_not_found))
 
 if __name__ == '__main__':
     import os
@@ -162,6 +166,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Manipulate your hosts file')
 
     parser.add_argument('name', nargs='+')
+    parser.add_argument('--silent', action='store_true', default=False)
     parser.add_argument('--set', dest='ip_address')
     parser.add_argument('--alias')
     parser.add_argument('--get', action='store_true', default=False)
@@ -183,7 +188,7 @@ if __name__ == '__main__':
         if args.get:
             hosts.print_all(args.name)
         elif args.alias is not None:
-            hosts.alias_all(args.name, args.alias)
+            hosts.alias_all(args.name, args.alias, not args.silent)
             if args.dry:
                 print hosts.file_contents()
             else:
@@ -195,7 +200,7 @@ if __name__ == '__main__':
             else:
                 hosts.write(hosts_path)
         elif args.remove:
-            hosts.remove_all(args.name)
+            hosts.remove_all(args.name, not args.silent)
             if args.dry:
                 print hosts.file_contents()
             else:

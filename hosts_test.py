@@ -59,6 +59,10 @@ class HostManipulationTestCase(unittest.TestCase):
 
         self.assertDoesNotHaveHostLine("1.2.3.4 test")
 
+    def test_remove_no_raise(self):
+        self.assertRaises(KeyError, self.hosts.remove_one, "test")
+        self.hosts.remove_one("test", False)
+
 
 class IPComparisonTestCase(unittest.TestCase):
     def test_compare_ipv4(self):
