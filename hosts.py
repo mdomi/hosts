@@ -100,12 +100,10 @@ class Hosts(object):
 
     def file_contents(self):
         reversed_hosts = {}
-        for host_name in self.hosts.keys():
-            ip_address = self.hosts[host_name]
+        for host_name, ip_address in self.hosts.items():
             if ip_address not in reversed_hosts:
-                reversed_hosts[ip_address] = [host_name]
-            else:
-                reversed_hosts[ip_address].append(host_name)
+                reversed_hosts[ip_address] = []
+            reversed_hosts[ip_address].append(host_name)
         parts = []
         for ip_address in sorted(reversed_hosts.keys(), compare_ip):
             parts.append('\n# -- %s -- #' % (ip_address,))
