@@ -1,0 +1,66 @@
+import unittest
+import os
+import tempfile
+import re
+
+from hosts import Hosts
+
+
+SPLIT_RE = re.compile("[\t ]+")
+
+
+def has_host_line(hosts_file, host_line):
+    needle = SPLIT_RE.split(host_line)
+    with open(hosts_file) as f:
+        for line in f.readlines():
+            if needle == SPLIT_RE.split(line.strip()):
+                return True
+    return False
+
+
+
+
+class HostManipulationTestCase(unittest.TestCase):
+    def setUp(self):
+        fh, self.hosts_file = tempfile.mkstemp()
+        self.hosts = Hosts(self.hosts_file)
+
+    def tearDown(self):
+        os.unlink(self.hosts_file)
+
+    def assertHasHostLine(self, host_line):
+        if not has_host_line(self.hosts_file, host_line):
+            raise AssertionError("Line not present: {0}".format(host_line))
+    
+    def assertDoesNotHaveHostLine(self, host_line):
+        if has_host_line(self.hosts_file, host_line):
+            raise AssertionError("Line is present: {0}".format(host_line))
+
+    def test_set_one(self):
+        self.hosts.set_one("test", "1.2.3.4")
+        self.hosts.write(self.hosts_file)
+
+        self.assertHasHostLine("1.2.3.4 test")
+
+    def test_set_all(self):
+        self.hosts.set_all(["test", "alias"], "1.2.3.4")
+        self.hosts.write(self.hosts_file)
+
+        self.assertHasHostLine("1.2.3.4 test")
+        self.assertHasHostLine("1.2.3.4 alias")
+
+    def test_remove_one(self):
+        self.hosts.set_one("test",  "1.2.3.4")
+        self.hosts.write(self.hosts_file)
+
+        self.hosts = Hosts(self.hosts_file)
+
+        self.hosts.remove_one("test")
+        self.hosts.write(self.hosts_file)
+
+        self.assertDoesNotHaveHostLine("1.2.3.4 test")
+
+
+
+if __name__ == "__main__":
+    unittest.main()
