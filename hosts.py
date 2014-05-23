@@ -22,6 +22,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 '''
+import os
 import datetime
 import re
 import socket
@@ -141,8 +142,12 @@ class Hosts(object):
             contents = self.file_contents()
         except Exception as e:
             raise e
-        with open(path, 'w') as hosts_file:
-            hosts_file.write(contents)
+
+        tmp_hosts_file_path = "{0}.tmp".format(path)  # Write atomically
+        with open(tmp_hosts_file_path, 'w') as tmp_hosts_file:
+            tmp_hosts_file.write(contents)
+
+        os.rename(tmp_hosts_file_path, path)
 
     def set_one(self, host_name, ip_address):
         """Set the given hostname to map to the given IP address"""
