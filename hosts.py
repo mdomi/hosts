@@ -109,6 +109,8 @@ class Hosts(object):
         for ip_address in sorted(reversed_hosts.keys(), compare_ip):
             parts.append('\n# -- %s -- #' % (ip_address,))
             for host_name in sorted(reversed_hosts[ip_address]):
+                if not host_name:
+                    continue
                 parts.append('%s\t%s' % (ip_address, host_name))
             parts.append('# -- %s -- #' % (ip_address,))
         return '\n'.join([get_created_comment(), '\n'.join(parts), ''])

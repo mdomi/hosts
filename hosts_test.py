@@ -30,7 +30,7 @@ class HostManipulationTestCase(unittest.TestCase):
     def assertHasHostLine(self, host_line):
         if not has_host_line(self.hosts_file, host_line):
             raise AssertionError("Line not present: {0}".format(host_line))
-    
+
     def assertDoesNotHaveHostLine(self, host_line):
         if has_host_line(self.hosts_file, host_line):
             raise AssertionError("Line is present: {0}".format(host_line))
@@ -62,6 +62,19 @@ class HostManipulationTestCase(unittest.TestCase):
     def test_remove_no_raise(self):
         self.assertRaises(KeyError, self.hosts.remove_one, "test")
         self.hosts.remove_one("test", False)
+
+    def test_purge_empty_records(self):
+        with open(self.hosts_file, 'a') as f:
+            f.write('1.2.3.4')
+
+        self.assertHasHostLine('1.2.3.4')
+
+        hosts = Hosts(self.hosts_file)
+        hosts.set_one("test",  "1.2.3.4")
+        hosts.set_one("",  "1.2.3.4")
+        hosts.write(self.hosts_file)
+
+        self.assertDoesNotHaveHostLine('1.2.3.4')
 
 
 class IPComparisonTestCase(unittest.TestCase):
