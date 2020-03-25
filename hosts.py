@@ -22,6 +22,8 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 '''
+
+from __future__ import print_function
 import os
 import datetime
 import re
@@ -89,7 +91,7 @@ class Hosts(object):
         return '[Unknown]'
 
     def print_one(self, host_name):
-        print host_name, self.get_one(host_name)
+        print(host_name, self.get_one(host_name))
 
     def print_all(self, host_names=None):
         if host_names is None:
@@ -195,21 +197,21 @@ if __name__ == '__main__':
         elif args.alias is not None:
             hosts.alias_all(args.name, args.alias, not args.silent)
             if args.dry:
-                print hosts.file_contents()
+                print(hosts.file_contents())
             else:
                 hosts.write(hosts_path)
         elif args.ip_address is not None:
             hosts.set_all(args.name, args.ip_address)
             if args.dry:
-                print hosts.file_contents()
+                print(hosts.file_contents())
             else:
                 hosts.write(hosts_path)
         elif args.remove:
             hosts.remove_all(args.name, not args.silent)
             if args.dry:
-                print hosts.file_contents()
+                print(hosts.file_contents())
             else:
                 hosts.write(hosts_path)
     except Exception as e:
-        print 'Error: %s' % (e,)
+        print('Error: %s' % (e,))
         exit(1)
